@@ -3,17 +3,15 @@ import threading
 import time
 
 # ---------------- CONFIGURAÇÃO ----------------
-BAUDRATE = 9600
-
-# Pergunta a porta ao usuário
-porta = input("Digite a porta do Arduino (ex.: /dev/tty.usbserial-A5069RR4 no Mac/Linux ou COM3 no Windows): ")
+porta = input("Digite a porta do Arduino (ex.: /dev/tty.usbserial-A5069RR4 ou COM3): ")
+baudrate = 9600
 
 try:
-    arduino = serial.Serial(porta, BAUDRATE, timeout=1)
+    arduino = serial.Serial(porta, baudrate, timeout=1)
     time.sleep(2)  # espera Arduino resetar
-    print(f"✅ Conectado ao Arduino na porta {porta}")
+    print(f"\nConectado ao Arduino em {porta} \n")
 except Exception as e:
-    print("❌ Erro ao conectar ao Arduino:", e)
+    print("Erro ao conectar ao Arduino:", e)
     arduino = None
 
 # ---------------- FUNÇÃO DE LEITURA ----------------
@@ -26,7 +24,7 @@ def ler_serial():
                 if linha:
                     print(f"\n[Arduino] {linha}")
             except Exception as e:
-                print("⚠️ Erro na leitura:", e)
+                print("Erro na leitura:", e)
         time.sleep(0.05)
 
 # ---------------- THREAD SERIAL ----------------
@@ -35,15 +33,6 @@ if arduino is not None:
     thread.start()
 
 # ---------------- LOOP PRINCIPAL ----------------
-print("\n=== Controle do Relé Py-Ino ===\n")
-print("Comandos disponíveis:")
-print("  relogio   -> Ajustar relógio (formato HHMM)")
-print("  agendar   -> Ajustar agenda do relé (formato HHMM)")
-print("  ligar     -> Liga o relé manualmente")
-print("  desligar  -> Desliga o relé manualmente")
-print("  verificar -> Mostra hora atual e hora agendada")
-print("===============================================\n")
-
 try:
     while True:
         if arduino is not None:
@@ -56,3 +45,4 @@ except KeyboardInterrupt:
     print("\nSaindo...")
     if arduino is not None:
         arduino.close()
+

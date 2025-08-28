@@ -5,10 +5,15 @@ int hora = 0;
 int minuto = 0;
 unsigned long ultimoMillis = 0;
 
-// Agenda
-int horaAgendada = -1;
-int minutoAgendado = -1;
-bool alarmeDisparado = false;
+// Agenda ligar
+int horaLigar = -1;
+int minutoLigar = -1;
+bool ligarDisparado = false;
+
+// Agenda desligar
+int horaDesligar = -1;
+int minutoDesligar = -1;
+bool desligarDisparado = false;
 
 String comando = "";
 
@@ -20,10 +25,10 @@ void setup() {
   delay(200);
 
   Serial.println("=== CLI do Relé ===");
-  Serial.println("-------------------------");
   Serial.println("Comandos disponíveis:");
   Serial.println("relogio   -> Ajustar hora (formato HHMM)");
-  Serial.println("agendar   -> Ajustar agenda do rele (formato HHMM)");
+  Serial.println("acordar   -> Ajustar horário de ligar o rele (formato HHMM)");
+  Serial.println("dormir    -> Ajustar horário de desligar o rele (formato HHMM)");
   Serial.println("ligar     -> Ligar rele manual");
   Serial.println("desligar  -> Desligar rele manual");
   Serial.println("verificar -> Mostrar hora atual e agenda");
@@ -41,16 +46,28 @@ void loop() {
     }
   }
 
-  // --- Verifica agendamento ---
-  if (hora == horaAgendada && minuto == minutoAgendado && !alarmeDisparado) {
+  // --- Verifica agendamento de ligar ---
+  if (hora == horaLigar && minuto == minutoLigar && !ligarDisparado) {
     digitalWrite(rele, HIGH);
     Serial.println(">> Rele AGENDADO foi LIGADO!");
-    alarmeDisparado = true;
+    ligarDisparado = true;
   }
 
-  // Reinicia flag para próximo dia
-  if (hora != horaAgendada || minuto != minutoAgendado) {
-    alarmeDisparado = false;
+  // Reinicia flag para próximo dia (ligar)
+  if (hora != horaLigar || minuto != minutoLigar) {
+    ligarDisparado = false;
+  }
+
+  // --- Verifica agendamento de desligar ---
+  if (hora == horaDesligar && minuto == minutoDesligar && !desligarDisparado) {
+    digitalWrite(rele, LOW);
+    Serial.println(">> Rele AGENDADO foi DESLIGADO!");
+    desligarDisparado = true;
+  }
+
+  // Reinicia flag para próximo dia (desligar)
+  if (hora != horaDesligar || minuto != minutoDesligar) {
+    desligarDisparado = false;
   }
 
   // --- Leitura de comandos pelo terminal ---
@@ -73,8 +90,11 @@ void loop() {
     else if (comando.equalsIgnoreCase("relogio")) {
       ajustarRelogio();
     }
-    else if (comando.equalsIgnoreCase("agendar")) {
-      ajustarAgenda();
+    else if (comando.equalsIgnoreCase("acordar")) {
+      ajustarAcordar();
+    }
+    else if (comando.equalsIgnoreCase("dormir")) {
+      ajustarDormir();
     }
     else if (comando.equalsIgnoreCase("verificar")) {
       verificarStatus();
@@ -105,7 +125,7 @@ void limparBufferSerial() {
 
 // Ajusta relogio
 void ajustarRelogio() {
-  Serial.println("Digite a hora no formato HHMM (exemplo 1345 para 13:45): ");
+  Serial.println("Digite a hora no formato HHMM: ");
   limparBufferSerial();
   while (Serial.available() == 0);
   int entrada = Serial.parseInt();
@@ -120,20 +140,37 @@ void ajustarRelogio() {
   Serial.println();
 }
 
-// Ajusta agenda
-void ajustarAgenda() {
-  Serial.println("Digite o horario para ligar o rele no formato HHMM (exemplo 0815 para 08:15): ");
+// Ajusta horário de ligar
+void ajustarAcordar() {
+  Serial.println("Digite o horario para LIGAR o rele no formato HHMM: ");
   limparBufferSerial();
   while (Serial.available() == 0);
   int entrada = Serial.parseInt();
   limparBufferSerial();
 
-  horaAgendada = entrada / 100;
-  minutoAgendado = entrada % 100;
+  horaLigar = entrada / 100;
+  minutoLigar = entrada % 100;
 
-  alarmeDisparado = false; // zera flag
-  Serial.print("Agenda configurada para: ");
-  mostraHora(horaAgendada, minutoAgendado);
+  ligarDisparado = false;
+  Serial.print("Agenda de LIGAR configurada para: ");
+  mostraHora(horaLigar, minutoLigar);
+  Serial.println();
+}
+
+// Ajusta horário de desligar
+void ajustarDormir() {
+  Serial.println("Digite o horario para DESLIGAR o rele no formato HHMM: ");
+  limparBufferSerial();
+  while (Serial.available() == 0);
+  int entrada = Serial.parseInt();
+  limparBufferSerial();
+
+  horaDesligar = entrada / 100;
+  minutoDesligar = entrada % 100;
+
+  desligarDisparado = false;
+  Serial.print("Agenda de DESLIGAR configurada para: ");
+  mostraHora(horaDesligar, minutoDesligar);
   Serial.println();
 }
 
@@ -143,11 +180,19 @@ void verificarStatus() {
   mostraHora(hora, minuto);
   Serial.println();
 
-  if (horaAgendada >= 0 && minutoAgendado >= 0) {
-    Serial.print("Hora agendada: ");
-    mostraHora(horaAgendada, minutoAgendado);
+  if (horaLigar >= 0 && minutoLigar >= 0) {
+    Serial.print("Hora agendada para LIGAR: ");
+    mostraHora(horaLigar, minutoLigar);
     Serial.println();
   } else {
-    Serial.println("Nenhuma agenda configurada.");
+    Serial.println("Nenhum horario de LIGAR configurado.");
+  }
+
+  if (horaDesligar >= 0 && minutoDesligar >= 0) {
+    Serial.print("Hora agendada para DESLIGAR: ");
+    mostraHora(horaDesligar, minutoDesligar);
+    Serial.println();
+  } else {
+    Serial.println("Nenhum horario de DESLIGAR configurado.");
   }
 }

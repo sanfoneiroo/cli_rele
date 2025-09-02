@@ -1,4 +1,16 @@
+#include <Thermistor.h>
+#include <NTC_Thermistor.h>
+
 #define rele 3
+#define led 4
+#define PINO_TERMISTOR A3
+#define RESISTOR 10000        // resistor de referência (10k)
+#define TERMISTOR_NOMINAL 10000 // valor nominal do termistor (10k a 25 °C)
+#define TEMPERATURA_NOMINAL 25  // temperatura nominal (25 °C)
+#define B_COEFICIENTE 3950      // coeficiente Beta do termistor
+
+// cria o objeto para ler o termistor
+NTC_Thermistor temp(PINO_TERMISTOR, RESISTOR, TERMISTOR_NOMINAL, TEMPERATURA_NOMINAL, B_COEFICIENTE);
 
 // Relógio simples (hora e minuto)
 int hora = 0;
@@ -49,6 +61,7 @@ void loop() {
   // --- Verifica agendamento de ligar ---
   if (hora == horaLigar && minuto == minutoLigar && !ligarDisparado) {
     digitalWrite(rele, HIGH);
+    digitalWrite(led, HIGH);
     Serial.println(">> Rele AGENDADO foi LIGADO!");
     ligarDisparado = true;
   }
@@ -61,6 +74,7 @@ void loop() {
   // --- Verifica agendamento de desligar ---
   if (hora == horaDesligar && minuto == minutoDesligar && !desligarDisparado) {
     digitalWrite(rele, LOW);
+    digitalWrite(led, LOW);
     Serial.println(">> Rele AGENDADO foi DESLIGADO!");
     desligarDisparado = true;
   }
@@ -81,10 +95,12 @@ void loop() {
 
     if (comando.equalsIgnoreCase("ligar")) {
       digitalWrite(rele, HIGH);
+      digitalWrite(led, HIGH);
       Serial.println("Rele LIGADO manualmente!");
     }
     else if (comando.equalsIgnoreCase("desligar")) {
       digitalWrite(rele, LOW);
+      digitalWrite(led, LOW);
       Serial.println("Rele DESLIGADO manualmente!");
     }
     else if (comando.equalsIgnoreCase("relogio")) {
@@ -176,23 +192,27 @@ void ajustarDormir() {
 
 // Verifica hora atual e agendada
 void verificarStatus() {
-  Serial.print("Hora atual: ");
+  double celsius = temp.readCelsius();  // lê a temperatura em °C
+
+  Serial.print("Hora: ");
   mostraHora(hora, minuto);
-  Serial.println();
+  Serial.print(" | ");
 
   if (horaLigar >= 0 && minutoLigar >= 0) {
-    Serial.print("Hora agendada para LIGAR: ");
+    Serial.print("Acordar: ");
     mostraHora(horaLigar, minutoLigar);
-    Serial.println();
   } else {
-    Serial.println("Nenhum horario de LIGAR configurado.");
+    Serial.print("Acordar: --:--");
   }
+  Serial.print(" | ");
 
   if (horaDesligar >= 0 && minutoDesligar >= 0) {
-    Serial.print("Hora agendada para DESLIGAR: ");
+    Serial.print("Dormir: ");
     mostraHora(horaDesligar, minutoDesligar);
-    Serial.println();
   } else {
-    Serial.println("Nenhum horario de DESLIGAR configurado.");
+    Serial.print("Dormir: --:--");
   }
+  Serial.print(" | Temp: ");
+  Serial.print(celsius);
+  Serial.println(" °C");  // só quebra a linha no final
 }
